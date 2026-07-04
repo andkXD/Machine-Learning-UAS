@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 class ApiService {
   // Ganti dengan URL Render.com setelah deploy
-  static const String baseUrl = 'https://churn-prediction-api.onrender.com';
+  static const String baseUrl = 'https://churn-prediction-api-b4dnfbf9egh4fbd0.malaysiawest-01.azurewebsites.net';
 
   static Future<Map<String, dynamic>> predictBoth(
       Map<String, dynamic> inputData) async {
