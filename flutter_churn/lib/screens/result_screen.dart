@@ -15,22 +15,19 @@ class ResultScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cnn        = result['cnn1d']  as Map<String, dynamic>;
-    final bilstm     = result['bilstm'] as Map<String, dynamic>;
-    final best       = result['final_prediction'] as String;
-    final bestModel  = result['best_model'] as String;
-    final isChurn    = best == 'Churn';
+    final prediction = (result['prediction'] as String?) ?? 'Retain';
+    final churnProb  = (result['churn_prob']  as num?)?.toDouble() ?? 
+                       (result['churn_risk']  as num?)?.toDouble() ?? 0.0;
+    final retainProb = (result['retain_prob'] as num?)?.toDouble() ?? 0.0;
+    final confidence = (result['confidence']  as num?)?.toDouble() ?? 0.0;
+    final riskLevel  = (result['risk_level']  as String?) ?? 'Rendah';
+    final isChurn    = prediction == 'Churn';
 
-    final cnnChurn    = (cnn['churn_risk']    as num).toDouble();
-    final cnnRetain   = (cnn['retain_prob']   as num).toDouble();
-    final cnnConf     = (cnn['confidence']    as num?)?.toDouble() ?? (cnnRetain > 50 ? cnnRetain : cnnChurn);
-    final bilstmChurn = (bilstm['churn_risk'] as num).toDouble();
-    final bilstmRetain= (bilstm['retain_prob']as num).toDouble();
-    final bilstmConf  = (bilstm['confidence'] as num?)?.toDouble() ?? (bilstmRetain > 50 ? bilstmRetain : bilstmChurn);
-
-    final cnnPred     = cnn['prediction']    as String;
-    final bilstmPred  = bilstm['prediction'] as String;
-    final agreement   = cnnPred == bilstmPred ? 'Kedua model sepakat' : 'Kedua model berbeda pendapat';
+    final riskColor = isChurn
+        ? (churnProb >= 75
+            ? const Color(0xFFEF4444)
+            : const Color(0xFFF97316))
+        : const Color(0xFF22C55E);
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A0E1A),
@@ -42,12 +39,17 @@ class ResultScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text('Hasil Prediksi',
-            style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: Colors.white)),
+            style: GoogleFonts.inter(
+                fontWeight: FontWeight.w700, color: Colors.white)),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.popUntil(context, (r) => r.isFirst),
-            child: Text('Home',
-                style: GoogleFonts.inter(color: const Color(0xFF3B82F6), fontSize: 13)),
+          TextButton.icon(
+            onPressed: () =>
+                Navigator.popUntil(context, (r) => r.isFirst),
+            icon: const Icon(Icons.home_rounded,
+                color: Color(0xFF3B82F6), size: 18),
+            label: Text('Home',
+                style: GoogleFonts.inter(
+                    color: const Color(0xFF3B82F6), fontSize: 13)),
           )
         ],
       ),
@@ -69,21 +71,32 @@ class ResultScreen extends StatelessWidget {
                         : [const Color(0xFF052E16), const Color(0xFF001A0A)],
                   ),
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: isChurn ? const Color(0xFFF97316) : const Color(0xFF22C55E),
-                    width: 2,
-                  ),
+                  border: Border.all(color: riskColor, width: 2),
                 ),
                 child: Column(
                   children: [
-                    Text(isChurn ? '⚠️' : '✅', style: const TextStyle(fontSize: 52)),
-                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: riskColor.withOpacity(0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        isChurn
+                            ? Icons.trending_down_rounded
+                            : Icons.trending_up_rounded,
+                        color: riskColor,
+                        size: 48,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     Text(
                       isChurn ? 'CHURN' : 'RETAIN',
                       style: GoogleFonts.inter(
-                        fontSize: 32, fontWeight: FontWeight.w900,
-                        color: isChurn ? const Color(0xFFF97316) : const Color(0xFF22C55E),
-                      ),
+                          fontSize: 36,
+                          fontWeight: FontWeight.w900,
+                          color: riskColor,
+                          letterSpacing: 2),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -91,21 +104,50 @@ class ResultScreen extends StatelessWidget {
                           ? 'Nasabah diprediksi akan meninggalkan bank'
                           : 'Nasabah diprediksi akan tetap bertahan',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF94A3B8)),
+                      style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: const Color(0xFF94A3B8)),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: riskColor.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(20),
+                        border:
+                            Border.all(color: riskColor.withOpacity(0.4)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.shield_rounded,
+                              color: riskColor, size: 14),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Risiko: $riskLevel',
+                            style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: riskColor),
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.05),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        'Model Terbaik: $bestModel',
-                        style: GoogleFonts.inter(
-                            fontSize: 12, color: const Color(0xFF94A3B8),
-                            fontWeight: FontWeight.w600),
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.memory_rounded,
+                            color: Color(0xFF64748B), size: 13),
+                        const SizedBox(width: 4),
+                        Text(
+                          'CNN 1D  |  Akurasi Testing: 86.0%',
+                          style: GoogleFonts.inter(
+                              fontSize: 11,
+                              color: const Color(0xFF64748B)),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -114,7 +156,7 @@ class ResultScreen extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            // ── SCORECARD MODEL ──
+            // ── PROBABILITAS ──
             FadeInUp(
               duration: const Duration(milliseconds: 550),
               child: Container(
@@ -127,51 +169,50 @@ class ResultScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Skor Perbandingan Model',
-                        style: GoogleFonts.inter(
-                            fontWeight: FontWeight.w700, color: Colors.white, fontSize: 15)),
+                    Row(children: [
+                      const Icon(Icons.bar_chart_rounded,
+                          color: Color(0xFF3B82F6), size: 20),
+                      const SizedBox(width: 8),
+                      Text('Probabilitas Prediksi',
+                          style: GoogleFonts.inter(
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                              fontSize: 15)),
+                    ]),
                     const SizedBox(height: 16),
-
-                    // Agreement Badge
+                    _probBar('Churn', churnProb,
+                        const Color(0xFFF97316)),
+                    const SizedBox(height: 12),
+                    _probBar('Retain', retainProb,
+                        const Color(0xFF22C55E)),
+                    const SizedBox(height: 16),
                     Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: agreement.contains('sepakat')
-                            ? const Color(0xFF22C55E).withOpacity(0.1)
-                            : const Color(0xFFF97316).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
+                        color: const Color(0xFF0A0E1A),
+                        borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: agreement.contains('sepakat')
-                              ? const Color(0xFF22C55E).withOpacity(0.3)
-                              : const Color(0xFFF97316).withOpacity(0.3),
-                        ),
+                            color: const Color(0xFF1E3A5F)),
                       ),
-                      child: Text(
-                        agreement.contains('sepakat')
-                            ? '✅ $agreement hasil lebih reliable'
-                            : '⚠️ $agreement gunakan model terbaik',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
-                            fontSize: 12, fontWeight: FontWeight.w600,
-                            color: agreement.contains('sepakat')
-                                ? const Color(0xFF22C55E)
-                                : const Color(0xFFF97316)),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.verified_rounded,
+                              color: Color(0xFF3B82F6), size: 16),
+                          const SizedBox(width: 8),
+                          Text('Tingkat Keyakinan Model',
+                              style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: const Color(0xFF94A3B8))),
+                          const Spacer(),
+                          Text(
+                              '${confidence.toStringAsFixed(1)}%',
+                              style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w800,
+                                  color: const Color(0xFF3B82F6))),
+                        ],
                       ),
                     ),
-
-                    const SizedBox(height: 16),
-
-                    // Scorecard grid
-                    Row(children: [
-                      Expanded(child: _scorecardItem(
-                        'CNN 1D', '🔷', cnnPred, cnnChurn, cnnRetain, cnnConf,
-                        const Color(0xFF3B82F6), bestModel == 'CNN 1D')),
-                      const SizedBox(width: 12),
-                      Expanded(child: _scorecardItem(
-                        'BiLSTM', '🔶', bilstmPred, bilstmChurn, bilstmRetain, bilstmConf,
-                        const Color(0xFF8B5CF6), bestModel == 'BiLSTM')),
-                    ]),
                   ],
                 ),
               ),
@@ -179,7 +220,7 @@ class ResultScreen extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            // ── DOUBLE BAR CHART: Churn vs Retain ──
+            // ── PIE CHART ──
             FadeInUp(
               duration: const Duration(milliseconds: 600),
               child: Container(
@@ -192,101 +233,61 @@ class ResultScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Probabilitas Churn vs Retain (%)',
-                        style: GoogleFonts.inter(
-                            fontWeight: FontWeight.w700, color: Colors.white, fontSize: 15)),
-                    const SizedBox(height: 6),
-                    Text('Perbandingan keyakinan kedua model',
-                        style: GoogleFonts.inter(
-                            fontSize: 11, color: const Color(0xFF64748B))),
+                    Row(children: [
+                      const Icon(Icons.pie_chart_rounded,
+                          color: Color(0xFF8B5CF6), size: 20),
+                      const SizedBox(width: 8),
+                      Text('Distribusi Probabilitas',
+                          style: GoogleFonts.inter(
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                              fontSize: 15)),
+                    ]),
                     const SizedBox(height: 20),
                     SizedBox(
-                      height: 220,
-                      child: BarChart(
-                        BarChartData(
-                          alignment: BarChartAlignment.spaceAround,
-                          maxY: 100,
-                          barTouchData: BarTouchData(
-                            enabled: true,
-                            touchTooltipData: BarTouchTooltipData(
-                              getTooltipColor: (_) => const Color(0xFF1F2937),
-                              getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                                final labels = ['CNN Churn', 'CNN Retain', 'BiLSTM Churn', 'BiLSTM Retain'];
-                                return BarTooltipItem(
-                                  '${labels[group.x * 2 + rodIndex]}\n${rod.toY.toStringAsFixed(1)}%',
-                                  GoogleFonts.inter(color: Colors.white, fontSize: 11),
-                                );
-                              },
+                      height: 200,
+                      child: PieChart(
+                        PieChartData(
+                          sectionsSpace: 3,
+                          centerSpaceRadius: 50,
+                          sections: [
+                            PieChartSectionData(
+                              value: churnProb,
+                              color: const Color(0xFFF97316),
+                              title:
+                                  '${churnProb.toStringAsFixed(1)}%',
+                              radius: 60,
+                              titleStyle: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white),
                             ),
-                          ),
-                          titlesData: FlTitlesData(
-                            leftTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                reservedSize: 36,
-                                getTitlesWidget: (v, _) => Text('${v.toInt()}%',
-                                    style: GoogleFonts.inter(
-                                        fontSize: 10, color: const Color(0xFF64748B))),
-                              ),
+                            PieChartSectionData(
+                              value: retainProb,
+                              color: const Color(0xFF22C55E),
+                              title:
+                                  '${retainProb.toStringAsFixed(1)}%',
+                              radius: 60,
+                              titleStyle: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white),
                             ),
-                            bottomTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                getTitlesWidget: (v, _) {
-                                  final labels = ['CNN 1D', 'BiLSTM'];
-                                  return Padding(
-                                    padding: const EdgeInsets.only(top: 8),
-                                    child: Text(labels[v.toInt()],
-                                        style: GoogleFonts.inter(
-                                            fontSize: 12, color: Colors.white,
-                                            fontWeight: FontWeight.w600)),
-                                  );
-                                },
-                              ),
-                            ),
-                            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                          ),
-                          gridData: FlGridData(
-                            show: true,
-                            horizontalInterval: 25,
-                            getDrawingHorizontalLine: (_) =>
-                                const FlLine(color: Color(0xFF1E3A5F), strokeWidth: 1),
-                          ),
-                          borderData: FlBorderData(show: false),
-                          barGroups: [
-                            // CNN 1D: Churn + Retain
-                            BarChartGroupData(x: 0, barRods: [
-                              BarChartRodData(
-                                toY: cnnChurn, color: const Color(0xFFF97316),
-                                width: 22, borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
-                              ),
-                              BarChartRodData(
-                                toY: cnnRetain, color: const Color(0xFF22C55E),
-                                width: 22, borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
-                              ),
-                            ], barsSpace: 4),
-                            // BiLSTM: Churn + Retain
-                            BarChartGroupData(x: 1, barRods: [
-                              BarChartRodData(
-                                toY: bilstmChurn, color: const Color(0xFFF97316),
-                                width: 22, borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
-                              ),
-                              BarChartRodData(
-                                toY: bilstmRetain, color: const Color(0xFF22C55E),
-                                width: 22, borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
-                              ),
-                            ], barsSpace: 4),
                           ],
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      _legend('Churn', const Color(0xFFF97316)),
-                      const SizedBox(width: 20),
-                      _legend('Retain', const Color(0xFF22C55E)),
-                    ]),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _legend('Churn',
+                            const Color(0xFFF97316)),
+                        const SizedBox(width: 24),
+                        _legend('Retain',
+                            const Color(0xFF22C55E)),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -294,7 +295,7 @@ class ResultScreen extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            // ── CONFIDENCE METER ──
+            // ── PERFORMA MODEL ──
             FadeInUp(
               duration: const Duration(milliseconds: 650),
               child: Container(
@@ -307,17 +308,110 @@ class ResultScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Tingkat Keyakinan Model',
+                    Row(children: [
+                      const Icon(Icons.leaderboard_rounded,
+                          color: Color(0xFF34D399), size: 20),
+                      const SizedBox(width: 8),
+                      Text('Performa Model CNN 1D',
+                          style: GoogleFonts.inter(
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                              fontSize: 15)),
+                    ]),
+                    const SizedBox(height: 4),
+                    Text('Diuji pada 1.000 data testing',
                         style: GoogleFonts.inter(
-                            fontWeight: FontWeight.w700, color: Colors.white, fontSize: 15)),
-                    const SizedBox(height: 6),
-                    Text('Semakin tinggi = model semakin yakin dengan prediksinya',
-                        style: GoogleFonts.inter(
-                            fontSize: 11, color: const Color(0xFF64748B))),
+                            fontSize: 11,
+                            color: const Color(0xFF64748B))),
                     const SizedBox(height: 16),
-                    _confidenceMeter('CNN 1D', cnnConf, const Color(0xFF3B82F6), bestModel == 'CNN 1D'),
+                    SizedBox(
+                      height: 180,
+                      child: BarChart(
+                        BarChartData(
+                          alignment: BarChartAlignment.spaceAround,
+                          maxY: 100,
+                          barTouchData:
+                              BarTouchData(enabled: false),
+                          titlesData: FlTitlesData(
+                            leftTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                reservedSize: 36,
+                                getTitlesWidget: (v, _) =>
+                                    Text('${v.toInt()}%',
+                                        style: GoogleFonts.inter(
+                                            fontSize: 9,
+                                            color: const Color(
+                                                0xFF64748B))),
+                              ),
+                            ),
+                            bottomTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                getTitlesWidget: (v, _) {
+                                  final labels = [
+                                    'Akurasi',
+                                    'Presisi',
+                                    'Recall',
+                                    'F1'
+                                  ];
+                                  return Padding(
+                                    padding: const EdgeInsets.only(
+                                        top: 6),
+                                    child: Text(labels[v.toInt()],
+                                        style: GoogleFonts.inter(
+                                            fontSize: 10,
+                                            color: Colors.white,
+                                            fontWeight:
+                                                FontWeight.w600)),
+                                  );
+                                },
+                              ),
+                            ),
+                            rightTitles: const AxisTitles(
+                                sideTitles: SideTitles(
+                                    showTitles: false)),
+                            topTitles: const AxisTitles(
+                                sideTitles: SideTitles(
+                                    showTitles: false)),
+                          ),
+                          gridData: FlGridData(
+                            show: true,
+                            horizontalInterval: 25,
+                            getDrawingHorizontalLine: (_) =>
+                                const FlLine(
+                                    color: Color(0xFF1E3A5F),
+                                    strokeWidth: 1),
+                          ),
+                          borderData: FlBorderData(show: false),
+                          barGroups: [
+                            _barGroup(0, 86.0,
+                                const Color(0xFF3B82F6)),
+                            _barGroup(1, 76.0,
+                                const Color(0xFF8B5CF6)),
+                            _barGroup(2, 45.0,
+                                const Color(0xFF34D399)),
+                            _barGroup(3, 57.0,
+                                const Color(0xFFFB923C)),
+                          ],
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 12),
-                    _confidenceMeter('BiLSTM', bilstmConf, const Color(0xFF8B5CF6), bestModel == 'BiLSTM'),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _metricPill('Akurasi', '86.0%',
+                            const Color(0xFF3B82F6)),
+                        _metricPill('Presisi', '76.0%',
+                            const Color(0xFF8B5CF6)),
+                        _metricPill('Recall', '45.0%',
+                            const Color(0xFF34D399)),
+                        _metricPill('F1-Score', '57.0%',
+                            const Color(0xFFFB923C)),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -338,21 +432,32 @@ class ResultScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('📋 Data Nasabah yang Diinput',
-                        style: GoogleFonts.inter(
-                            fontWeight: FontWeight.w700, color: Colors.white, fontSize: 15)),
+                    Row(children: [
+                      const Icon(Icons.person_rounded,
+                          color: Color(0xFF3B82F6), size: 20),
+                      const SizedBox(width: 8),
+                      Text('Data Nasabah yang Diinput',
+                          style: GoogleFonts.inter(
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                              fontSize: 15)),
+                    ]),
                     const SizedBox(height: 14),
                     ...inputData.entries.map((e) => Padding(
                           padding: const EdgeInsets.only(bottom: 8),
                           child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            mainAxisAlignment:
+                                MainAxisAlignment.spaceBetween,
                             children: [
                               Text(e.key,
                                   style: GoogleFonts.inter(
-                                      fontSize: 13, color: const Color(0xFF64748B))),
+                                      fontSize: 13,
+                                      color:
+                                          const Color(0xFF64748B))),
                               Text(e.value.toString(),
                                   style: GoogleFonts.inter(
-                                      fontSize: 13, fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
                                       color: Colors.white)),
                             ],
                           ),
@@ -366,16 +471,20 @@ class ResultScreen extends StatelessWidget {
 
             SizedBox(
               width: double.infinity,
-              child: OutlinedButton(
+              child: OutlinedButton.icon(
                 onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                label: Text('Prediksi Ulang',
+                    style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w700, fontSize: 15)),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFF3B82F6),
                   side: const BorderSide(color: Color(0xFF3B82F6)),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16)),
                 ),
-                child: Text('Prediksi Ulang',
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 15)),
               ),
             ),
             const SizedBox(height: 24),
@@ -385,101 +494,84 @@ class ResultScreen extends StatelessWidget {
     );
   }
 
-  Widget _scorecardItem(String name, String emoji, String pred,
-      double churn, double retain, double conf, Color color, bool isBest) {
-    final isChurn = pred == 'Churn';
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.07),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isBest ? color : color.withOpacity(0.2),
-          width: isBest ? 2 : 1,
-        ),
-      ),
-      child: Column(
-        children: [
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text(emoji, style: const TextStyle(fontSize: 20)),
-            if (isBest) const Text('👑', style: TextStyle(fontSize: 14)),
-          ]),
-          const SizedBox(height: 8),
-          Text(name,
-              style: GoogleFonts.inter(
-                  fontWeight: FontWeight.w700, color: color, fontSize: 13)),
-          const SizedBox(height: 6),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: isChurn
-                  ? const Color(0xFFF97316).withOpacity(0.15)
-                  : const Color(0xFF22C55E).withOpacity(0.15),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(pred,
-                style: GoogleFonts.inter(
-                    fontSize: 12, fontWeight: FontWeight.w700,
-                    color: isChurn ? const Color(0xFFF97316) : const Color(0xFF22C55E))),
-          ),
-          const SizedBox(height: 8),
-          Text('Churn: ${churn.toStringAsFixed(1)}%',
-              style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF94A3B8))),
-          Text('Retain: ${retain.toStringAsFixed(1)}%',
-              style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF94A3B8))),
-          const SizedBox(height: 4),
-          Text('Conf: ${conf.toStringAsFixed(1)}%',
-              style: GoogleFonts.inter(
-                  fontSize: 11, fontWeight: FontWeight.w600,
-                  color: color)),
-        ],
-      ),
-    );
-  }
-
-  Widget _confidenceMeter(String name, double conf, Color color, bool isBest) {
+  Widget _probBar(String label, double value, Color color) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Row(children: [
-            Text(name,
-                style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: isBest ? FontWeight.w700 : FontWeight.w400,
-                    color: isBest ? color : const Color(0xFF64748B))),
-            if (isBest) ...[
-              const SizedBox(width: 4),
-              const Text('👑', style: TextStyle(fontSize: 12)),
-            ]
-          ]),
-          Text('${conf.toStringAsFixed(1)}%',
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+          Text(label,
               style: GoogleFonts.inter(
                   fontSize: 13,
-                  fontWeight: isBest ? FontWeight.w700 : FontWeight.w400,
-                  color: isBest ? color : const Color(0xFF64748B))),
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white)),
+          Text('${value.toStringAsFixed(1)}%',
+              style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: color)),
         ]),
         const SizedBox(height: 6),
         ClipRRect(
           borderRadius: BorderRadius.circular(6),
           child: LinearProgressIndicator(
-            value: conf / 100,
+            value: value / 100,
             backgroundColor: Colors.white12,
-            valueColor: AlwaysStoppedAnimation<Color>(
-                isBest ? color : color.withOpacity(0.3)),
-            minHeight: 10,
+            valueColor: AlwaysStoppedAnimation<Color>(color),
+            minHeight: 12,
           ),
         ),
       ],
     );
   }
 
+  BarChartGroupData _barGroup(int x, double val, Color color) {
+    return BarChartGroupData(x: x, barRods: [
+      BarChartRodData(
+        toY: val,
+        color: color,
+        width: 32,
+        borderRadius:
+            const BorderRadius.vertical(top: Radius.circular(6)),
+        backDrawRodData: BackgroundBarChartRodData(
+          show: true,
+          toY: 100,
+          color: color.withOpacity(0.1),
+        ),
+      )
+    ]);
+  }
+
   Widget _legend(String label, Color color) {
     return Row(children: [
-      Container(width: 12, height: 12,
-          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3))),
+      Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(2))),
       const SizedBox(width: 6),
-      Text(label, style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF94A3B8))),
+      Text(label,
+          style: GoogleFonts.inter(
+              fontSize: 11,
+              color: const Color(0xFF94A3B8))),
     ]);
+  }
+
+  Widget _metricPill(String label, String value, Color color) {
+    return Container(
+      padding:
+          const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Text('$label: $value',
+          style: GoogleFonts.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: color)),
+    );
   }
 }

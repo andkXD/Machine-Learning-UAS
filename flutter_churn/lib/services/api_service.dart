@@ -9,7 +9,7 @@ class ApiService {
       Map<String, dynamic> inputData) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/predict/both'),
+        Uri.parse('$baseUrl/predict'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(inputData),
       );

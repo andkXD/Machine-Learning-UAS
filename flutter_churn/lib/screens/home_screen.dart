@@ -23,7 +23,7 @@ class HomeScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Header ──
+                // Header
                 FadeInDown(
                   duration: const Duration(milliseconds: 600),
                   child: Row(
@@ -36,7 +36,7 @@ class HomeScreen extends StatelessWidget {
                           border: Border.all(
                               color: const Color(0xFF3B82F6).withOpacity(0.3)),
                         ),
-                        child: const Icon(Icons.psychology,
+                        child: const Icon(Icons.psychology_rounded,
                             color: Color(0xFF3B82F6), size: 28),
                       ),
                       const SizedBox(width: 12),
@@ -60,7 +60,7 @@ class HomeScreen extends StatelessWidget {
 
                 const SizedBox(height: 40),
 
-                // ── Hero ──
+                // Hero
                 FadeInUp(
                   duration: const Duration(milliseconds: 700),
                   child: Container(
@@ -77,7 +77,15 @@ class HomeScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('🏦', style: TextStyle(fontSize: 40)),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF3B82F6).withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.account_balance_rounded,
+                              color: Color(0xFF3B82F6), size: 32),
+                        ),
                         const SizedBox(height: 16),
                         Text('Bank Customer\nChurn Prediction',
                             style: GoogleFonts.inter(
@@ -87,7 +95,7 @@ class HomeScreen extends StatelessWidget {
                                 height: 1.2)),
                         const SizedBox(height: 10),
                         Text(
-                            'Prediksi apakah nasabah akan churn atau bertahan menggunakan dua model Deep Learning.',
+                            'Prediksi apakah nasabah akan churn atau bertahan menggunakan model Deep Learning CNN 1D.',
                             style: GoogleFonts.inter(
                                 fontSize: 13,
                                 color: const Color(0xFF94A3B8),
@@ -99,22 +107,30 @@ class HomeScreen extends StatelessWidget {
 
                 const SizedBox(height: 28),
 
-                // ── Model Info Cards ──
+                // Model Info Cards
                 FadeInUp(
-                    duration: const Duration(milliseconds: 800),
-                    child: Row(children: [
-                      Expanded(
-                          child: _modelCard('CNN 1D',
-                              'Convolutional Neural Network', '🔷')),
-                      const SizedBox(width: 12),
-                      Expanded(
-                          child: _modelCard('BiLSTM',
-                              'Bidirectional LSTM', '🔶')),
-                    ])),
+                  duration: const Duration(milliseconds: 800),
+                  child: Row(children: [
+                    Expanded(child: _infoCard(
+                        Icons.check_circle_rounded,
+                        '86.0%', 'Akurasi Model',
+                        const Color(0xFF3B82F6))),
+                    const SizedBox(width: 12),
+                    Expanded(child: _infoCard(
+                        Icons.dataset_rounded,
+                        '10.000', 'Total Data',
+                        const Color(0xFF8B5CF6))),
+                    const SizedBox(width: 12),
+                    Expanded(child: _infoCard(
+                        Icons.memory_rounded,
+                        'CNN 1D', 'Model',
+                        const Color(0xFF34D399))),
+                  ]),
+                ),
 
                 const SizedBox(height: 28),
 
-                // ── Info Dataset ──
+                // Info Dataset
                 FadeInUp(
                   duration: const Duration(milliseconds: 900),
                   child: Container(
@@ -126,14 +142,16 @@ class HomeScreen extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.info_outline,
+                        const Icon(Icons.info_outline_rounded,
                             color: Color(0xFF3B82F6), size: 20),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             'Dataset: Bank Customer Churn Modeling\n10.000 data nasabah | 11 fitur input',
                             style: GoogleFonts.inter(
-                                fontSize: 12, color: const Color(0xFF94A3B8)),
+                                fontSize: 12,
+                                color: const Color(0xFF94A3B8),
+                                height: 1.5),
                           ),
                         ),
                       ],
@@ -143,15 +161,19 @@ class HomeScreen extends StatelessWidget {
 
                 const Spacer(),
 
-                // ── Button Mulai ──
+                // Button
                 FadeInUp(
                   duration: const Duration(milliseconds: 1000),
                   child: SizedBox(
                     width: double.infinity,
-                    child: ElevatedButton(
+                    child: ElevatedButton.icon(
                       onPressed: () => Navigator.push(context,
                           MaterialPageRoute(
                               builder: (_) => const InputScreen())),
+                      icon: const Icon(Icons.analytics_rounded, size: 20),
+                      label: Text('Mulai Prediksi',
+                          style: GoogleFonts.inter(
+                              fontSize: 16, fontWeight: FontWeight.w700)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF3B82F6),
                         foregroundColor: Colors.white,
@@ -159,16 +181,6 @@ class HomeScreen extends StatelessWidget {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16)),
                         elevation: 0,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text('Mulai Prediksi',
-                              style: GoogleFonts.inter(
-                                  fontSize: 16, fontWeight: FontWeight.w700)),
-                          const SizedBox(width: 8),
-                          const Icon(Icons.arrow_forward_rounded, size: 20),
-                        ],
                       ),
                     ),
                   ),
@@ -182,9 +194,9 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _modelCard(String title, String subtitle, String emoji) {
+  Widget _infoCard(IconData icon, String value, String label, Color color) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: const Color(0xFF111827),
         borderRadius: BorderRadius.circular(16),
@@ -193,14 +205,14 @@ class HomeScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(emoji, style: const TextStyle(fontSize: 24)),
+          Icon(icon, color: color, size: 22),
           const SizedBox(height: 8),
-          Text(title,
+          Text(value,
               style: GoogleFonts.inter(
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
                   fontSize: 14)),
-          Text(subtitle,
+          Text(label,
               style: GoogleFonts.inter(
                   fontSize: 10, color: const Color(0xFF64748B))),
         ],
