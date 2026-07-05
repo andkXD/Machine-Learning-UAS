@@ -120,7 +120,7 @@ def predict_both():
         conf_cnn    = prob_cnn    if prob_cnn    >= 0.5 else (1 - prob_cnn)
         conf_bilstm = prob_bilstm if prob_bilstm >= 0.5 else (1 - prob_bilstm)
 
-        if conf_cnn >= conf_bilstm:
+        if conf_cnn > conf_bilstm:
             best_model = "CNN 1D"
             best_label = label_cnn
             best_prob  = prob_cnn
