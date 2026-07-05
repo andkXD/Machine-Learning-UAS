@@ -15,13 +15,15 @@ class ResultScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cnn    = result['cnn1d']  as Map<String, dynamic>;
-    final bilstm = result['bilstm'] as Map<String, dynamic>;
-    final best   = result['final_prediction'] as String;
-    final bestModel = result['best_model'] as String;
-
-    final isChurn = best == 'Churn';
-
+    final cnn        = result['cnn1d']  as Map<String, dynamic>;
+    final bilstm     = result['bilstm'] as Map<String, dynamic>;
+    final best       = result['final_prediction'] as String;
+    final bestModel  = result['best_model'] as String;
+    final reason     = result['reason'] as String? ?? '';
+    final agreement  = result['agreement'] as String? ?? '';
+    final cnnConf    = (cnn['confidence'] as num?)?.toDouble() ?? 0.0;
+    final bilstmConf = (bilstm['confidence'] as num?)?.toDouble() ?? 0.0;
+    final isChurn    = best == 'Churn';
     final cnnChurn    = (cnn['churn_risk']    as num).toDouble();
     final bilstmChurn = (bilstm['churn_risk'] as num).toDouble();
 
@@ -35,15 +37,12 @@ class ResultScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text('Hasil Prediksi',
-            style: GoogleFonts.inter(
-                fontWeight: FontWeight.w700, color: Colors.white)),
+            style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: Colors.white)),
         actions: [
           TextButton(
-            onPressed: () =>
-                Navigator.popUntil(context, (r) => r.isFirst),
+            onPressed: () => Navigator.popUntil(context, (r) => r.isFirst),
             child: Text('Home',
-                style: GoogleFonts.inter(
-                    color: const Color(0xFF3B82F6), fontSize: 13)),
+                style: GoogleFonts.inter(color: const Color(0xFF3B82F6), fontSize: 13)),
           )
         ],
       ),
@@ -66,25 +65,19 @@ class ResultScreen extends StatelessWidget {
                   ),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: isChurn
-                        ? const Color(0xFFF97316)
-                        : const Color(0xFF22C55E),
+                    color: isChurn ? const Color(0xFFF97316) : const Color(0xFF22C55E),
                     width: 2,
                   ),
                 ),
                 child: Column(
                   children: [
-                    Text(isChurn ? '⚠️' : '✅',
-                        style: const TextStyle(fontSize: 52)),
+                    Text(isChurn ? '⚠️' : '✅', style: const TextStyle(fontSize: 52)),
                     const SizedBox(height: 12),
                     Text(
                       isChurn ? 'CHURN' : 'RETAIN',
                       style: GoogleFonts.inter(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w900,
-                        color: isChurn
-                            ? const Color(0xFFF97316)
-                            : const Color(0xFF22C55E),
+                        fontSize: 32, fontWeight: FontWeight.w900,
+                        color: isChurn ? const Color(0xFFF97316) : const Color(0xFF22C55E),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -93,14 +86,11 @@ class ResultScreen extends StatelessWidget {
                           ? 'Nasabah diprediksi akan meninggalkan bank'
                           : 'Nasabah diprediksi akan tetap bertahan',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
-                          fontSize: 13,
-                          color: const Color(0xFF94A3B8)),
+                      style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF94A3B8)),
                     ),
                     const SizedBox(height: 12),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.05),
                         borderRadius: BorderRadius.circular(20),
@@ -108,10 +98,80 @@ class ResultScreen extends StatelessWidget {
                       child: Text(
                         'Model Terbaik: $bestModel',
                         style: GoogleFonts.inter(
-                            fontSize: 12,
-                            color: const Color(0xFF94A3B8),
+                            fontSize: 12, color: const Color(0xFF94A3B8),
                             fontWeight: FontWeight.w600),
                       ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // ── KENAPA MODEL INI TERBAIK ──
+            FadeInUp(
+              duration: const Duration(milliseconds: 550),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF111827),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFF1E3A5F)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [
+                      const Text('🏆', style: TextStyle(fontSize: 18)),
+                      const SizedBox(width: 8),
+                      Text('Mengapa $bestModel Terpilih?',
+                          style: GoogleFonts.inter(
+                              fontWeight: FontWeight.w700, color: Colors.white, fontSize: 14)),
+                    ]),
+                    const SizedBox(height: 12),
+                    _confidenceRow('CNN 1D', cnnConf, const Color(0xFF3B82F6), bestModel == 'CNN 1D'),
+                    const SizedBox(height: 8),
+                    _confidenceRow('BiLSTM', bilstmConf, const Color(0xFF8B5CF6), bestModel == 'BiLSTM'),
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: agreement.contains('sepakat')
+                            ? const Color(0xFF22C55E).withOpacity(0.1)
+                            : const Color(0xFFF97316).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: agreement.contains('sepakat')
+                              ? const Color(0xFF22C55E).withOpacity(0.3)
+                              : const Color(0xFFF97316).withOpacity(0.3),
+                        ),
+                      ),
+                      child: Row(children: [
+                        Text(agreement.contains('sepakat') ? '✅' : '⚠️',
+                            style: const TextStyle(fontSize: 14)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(agreement,
+                              style: GoogleFonts.inter(
+                                  fontSize: 12, fontWeight: FontWeight.w600,
+                                  color: agreement.contains('sepakat')
+                                      ? const Color(0xFF22C55E)
+                                      : const Color(0xFFF97316))),
+                        ),
+                      ]),
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0A0E1A),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text('💡 $reason',
+                          style: GoogleFonts.inter(
+                              fontSize: 12, color: const Color(0xFF94A3B8), height: 1.5)),
                     ),
                   ],
                 ),
@@ -135,12 +195,8 @@ class ResultScreen extends StatelessWidget {
                   children: [
                     Text('📊 Perbandingan Model',
                         style: GoogleFonts.inter(
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            fontSize: 15)),
+                            fontWeight: FontWeight.w700, color: Colors.white, fontSize: 15)),
                     const SizedBox(height: 16),
-
-                    // CNN Card
                     _modelResultCard(
                       modelName: 'CNN 1D',
                       prediction: cnn['prediction'] as String,
@@ -149,10 +205,7 @@ class ResultScreen extends StatelessWidget {
                       color: const Color(0xFF3B82F6),
                       emoji: '🔷',
                     ),
-
                     const SizedBox(height: 12),
-
-                    // BiLSTM Card
                     _modelResultCard(
                       modelName: 'BiLSTM',
                       prediction: bilstm['prediction'] as String,
@@ -168,7 +221,7 @@ class ResultScreen extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            // ── BAR CHART PERBANDINGAN ──
+            // ── BAR CHART ──
             FadeInUp(
               duration: const Duration(milliseconds: 700),
               child: Container(
@@ -183,9 +236,7 @@ class ResultScreen extends StatelessWidget {
                   children: [
                     Text('📈 Risiko Churn (%)',
                         style: GoogleFonts.inter(
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            fontSize: 15)),
+                            fontWeight: FontWeight.w700, color: Colors.white, fontSize: 15)),
                     const SizedBox(height: 20),
                     SizedBox(
                       height: 200,
@@ -199,12 +250,9 @@ class ResultScreen extends StatelessWidget {
                               sideTitles: SideTitles(
                                 showTitles: true,
                                 reservedSize: 36,
-                                getTitlesWidget: (v, _) => Text(
-                                  '${v.toInt()}%',
-                                  style: GoogleFonts.inter(
-                                      fontSize: 10,
-                                      color: const Color(0xFF64748B)),
-                                ),
+                                getTitlesWidget: (v, _) => Text('${v.toInt()}%',
+                                    style: GoogleFonts.inter(
+                                        fontSize: 10, color: const Color(0xFF64748B))),
                               ),
                             ),
                             bottomTitles: AxisTitles(
@@ -214,28 +262,23 @@ class ResultScreen extends StatelessWidget {
                                   final labels = ['CNN 1D', 'BiLSTM'];
                                   return Padding(
                                     padding: const EdgeInsets.only(top: 8),
-                                    child: Text(
-                                      labels[v.toInt()],
-                                      style: GoogleFonts.inter(
-                                          fontSize: 12,
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w600),
-                                    ),
+                                    child: Text(labels[v.toInt()],
+                                        style: GoogleFonts.inter(
+                                            fontSize: 12, color: Colors.white,
+                                            fontWeight: FontWeight.w600)),
                                   );
                                 },
                               ),
                             ),
-                            rightTitles: const AxisTitles(
-                                sideTitles: SideTitles(showTitles: false)),
-                            topTitles: const AxisTitles(
-                                sideTitles: SideTitles(showTitles: false)),
+                            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                           ),
                           gridData: FlGridData(
                             show: true,
                             drawHorizontalLine: true,
                             horizontalInterval: 25,
-                            getDrawingHorizontalLine: (_) => const FlLine(
-                              color: Color(0xFF1E3A5F), strokeWidth: 1),
+                            getDrawingHorizontalLine: (_) =>
+                                const FlLine(color: Color(0xFF1E3A5F), strokeWidth: 1),
                           ),
                           borderData: FlBorderData(show: false),
                           barGroups: [
@@ -245,19 +288,6 @@ class ResultScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    // Garis threshold 50%
-                    Row(
-                      children: [
-                        Container(width: 16, height: 2,
-                            color: const Color(0xFFEF4444)),
-                        const SizedBox(width: 6),
-                        Text('Threshold Churn (50%)',
-                            style: GoogleFonts.inter(
-                                fontSize: 11,
-                                color: const Color(0xFF94A3B8))),
-                      ],
-                    )
                   ],
                 ),
               ),
@@ -280,9 +310,7 @@ class ResultScreen extends StatelessWidget {
                   children: [
                     Text('📋 Data Nasabah yang Diinput',
                         style: GoogleFonts.inter(
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            fontSize: 15)),
+                            fontWeight: FontWeight.w700, color: Colors.white, fontSize: 15)),
                     const SizedBox(height: 14),
                     ...inputData.entries.map((e) => Padding(
                           padding: const EdgeInsets.only(bottom: 8),
@@ -291,12 +319,10 @@ class ResultScreen extends StatelessWidget {
                             children: [
                               Text(e.key,
                                   style: GoogleFonts.inter(
-                                      fontSize: 13,
-                                      color: const Color(0xFF64748B))),
+                                      fontSize: 13, color: const Color(0xFF64748B))),
                               Text(e.value.toString(),
                                   style: GoogleFonts.inter(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13, fontWeight: FontWeight.w600,
                                       color: Colors.white)),
                             ],
                           ),
@@ -308,7 +334,6 @@ class ResultScreen extends StatelessWidget {
 
             const SizedBox(height: 28),
 
-            // ── Tombol Prediksi Ulang ──
             SizedBox(
               width: double.infinity,
               child: OutlinedButton(
@@ -317,20 +342,53 @@ class ResultScreen extends StatelessWidget {
                   foregroundColor: const Color(0xFF3B82F6),
                   side: const BorderSide(color: Color(0xFF3B82F6)),
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
                 child: Text('🔄 Prediksi Ulang',
-                    style: GoogleFonts.inter(
-                        fontWeight: FontWeight.w700, fontSize: 15)),
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 15)),
               ),
             ),
-
             const SizedBox(height: 24),
           ],
         ),
       ),
     );
+  }
+
+  Widget _confidenceRow(String name, double conf, Color color, bool isBest) {
+    return Row(children: [
+      SizedBox(
+        width: 60,
+        child: Text(name,
+            style: GoogleFonts.inter(
+                fontSize: 12,
+                color: isBest ? color : const Color(0xFF64748B),
+                fontWeight: isBest ? FontWeight.w700 : FontWeight.w400)),
+      ),
+      const SizedBox(width: 8),
+      Expanded(
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: conf / 100,
+            backgroundColor: Colors.white12,
+            valueColor: AlwaysStoppedAnimation<Color>(
+                isBest ? color : color.withOpacity(0.4)),
+            minHeight: 8,
+          ),
+        ),
+      ),
+      const SizedBox(width: 8),
+      Text('${conf.toStringAsFixed(1)}%',
+          style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: isBest ? FontWeight.w700 : FontWeight.w400,
+              color: isBest ? color : const Color(0xFF64748B))),
+      if (isBest) ...[
+        const SizedBox(width: 4),
+        const Text('👑', style: TextStyle(fontSize: 12)),
+      ]
+    ]);
   }
 
   BarChartGroupData _barGroup(int x, double val, Color color) {
@@ -341,9 +399,7 @@ class ResultScreen extends StatelessWidget {
         width: 40,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
         backDrawRodData: BackgroundBarChartRodData(
-          show: true,
-          toY: 100,
-          color: color.withOpacity(0.1),
+          show: true, toY: 100, color: color.withOpacity(0.1),
         ),
       )
     ]);
@@ -375,11 +431,8 @@ class ResultScreen extends StatelessWidget {
               children: [
                 Text(modelName,
                     style: GoogleFonts.inter(
-                        fontWeight: FontWeight.w700,
-                        color: color,
-                        fontSize: 14)),
+                        fontWeight: FontWeight.w700, color: color, fontSize: 14)),
                 const SizedBox(height: 4),
-                // Progress bar churn risk
                 ClipRRect(
                   borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
@@ -393,8 +446,7 @@ class ResultScreen extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   'Churn: ${churnRisk.toStringAsFixed(1)}%  |  Retain: ${retainProb.toStringAsFixed(1)}%',
-                  style: GoogleFonts.inter(
-                      fontSize: 11, color: const Color(0xFF94A3B8)),
+                  style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF94A3B8)),
                 ),
               ],
             ),
@@ -408,15 +460,10 @@ class ResultScreen extends StatelessWidget {
                   : const Color(0xFF22C55E).withOpacity(0.15),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Text(
-              prediction,
-              style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: isChurn
-                      ? const Color(0xFFF97316)
-                      : const Color(0xFF22C55E)),
-            ),
+            child: Text(prediction,
+                style: GoogleFonts.inter(
+                    fontSize: 12, fontWeight: FontWeight.w700,
+                    color: isChurn ? const Color(0xFFF97316) : const Color(0xFF22C55E))),
           ),
         ],
       ),
