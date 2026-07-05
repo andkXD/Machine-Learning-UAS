@@ -3,17 +3,17 @@ import 'package:http/http.dart' as http;
 
 class ApiService {
   // Ganti dengan URL Render.com setelah deploy
-  static const String baseUrl = 'https://churn-prediction-api-b4dnfbf9egh4fbd0.malaysiawest-01.azurewebsites.net';
+  static const String baseUrl =
+      'https://churn-prediction-api-b4dnfbf9egh4fbd0.malaysiawest-01.azurewebsites.net';
 
-  static Future<Map<String, dynamic>> predictBoth(
+  static Future<Map<String, dynamic>> predict(
       Map<String, dynamic> inputData) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/predict'),
+        Uri.parse('$baseUrl/predict/both'), // ← ganti ke /predict/both
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(inputData),
       );
-
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {

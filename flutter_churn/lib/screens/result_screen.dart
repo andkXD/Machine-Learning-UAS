@@ -15,12 +15,11 @@ class ResultScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final prediction = (result['prediction'] as String?) ?? 'Retain';
-    final churnProb  = (result['churn_prob']  as num?)?.toDouble() ?? 
-                       (result['churn_risk']  as num?)?.toDouble() ?? 0.0;
-    final retainProb = (result['retain_prob'] as num?)?.toDouble() ?? 0.0;
-    final confidence = (result['confidence']  as num?)?.toDouble() ?? 0.0;
-    final riskLevel  = (result['risk_level']  as String?) ?? 'Rendah';
+    final prediction = (result['final_prediction'] as String?) ?? 'Retain';
+    final churnProb  = (result['bilstm']?['churn_risk'] as num?)?.toDouble() ?? 0.0;
+    final retainProb = (result['bilstm']?['retain_prob'] as num?)?.toDouble() ?? 0.0;
+    final confidence = (result['bilstm']?['confidence'] as num?)?.toDouble() ?? 0.0;
+    final riskLevel  = churnProb >= 75 ? 'Tinggi' : churnProb >= 50 ? 'Sedang' : churnProb >= 25 ? 'Rendah' : 'Sangat Rendah';
     final isChurn    = prediction == 'Churn';
 
     final riskColor = isChurn

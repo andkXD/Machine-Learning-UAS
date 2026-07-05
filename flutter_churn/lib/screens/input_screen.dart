@@ -62,7 +62,7 @@ class _InputScreenState extends State<InputScreen> {
         'Gender':          _gender,
       };
 
-      final result = await ApiService.predictBoth(inputData);
+      final result = await ApiService.predict(inputData);
 
       if (mounted) {
         Navigator.push(
